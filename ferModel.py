@@ -1,7 +1,8 @@
-from keras.models import Model
-from keras.layers import Input, Dense, Flatten, Dropout, BatchNormalization
+from keras.layers import BatchNormalization, Dense, Dropout, Flatten, Input
 from keras.layers.convolutional import Conv2D
 from keras.layers.pooling import MaxPooling2D
+from keras.models import Model
+
 
 def FER_Model(input_shape=(48, 48, 1)):
   visible = Input(shape=input_shape, name='input')

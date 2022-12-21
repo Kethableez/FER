@@ -9,13 +9,13 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import to_categorical
 from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix
-from modelFlow import initFlow
 
 from ferModel import FER_Model
+from modelFlow import initFlow
 
-gpus = tf.config.list_physical_devices('GPU')
-for gpu in gpus:
-  tf.config.experimental.set_memory_growth(gpu, True)
+# gpus = tf.config.list_physical_devices('GPU')
+# for gpu in gpus:
+#   tf.config.experimental.set_memory_growth(gpu, True)
 
 
 df = pd.read_csv('./dataset/fer2013.csv')
@@ -68,6 +68,8 @@ batch_size = 64
 
 train_flow = datagen.flow(X_train, y_train, batch_size=batch_size) 
 test_flow = testgen.flow(X_test, y_test, batch_size=batch_size)
+
+
 
 model = FER_Model()
 opt = Adam(learning_rate=0.0001, decay=1e-6)
@@ -133,7 +135,6 @@ def plot_confusion_matrix(y_test, y_pred, classes,
   plt.yticks(tick_marks, classes)
 
   thresh = cm.min() + (cm.max() - cm.min()) / 2.
-  # for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
   for i in range (cm.shape[0]):
     for j in range (cm.shape[1]):
       plt.text(j, i, cm[i, j], horizontalalignment="center", color="white" if cm[i, j] > thresh else "black")
