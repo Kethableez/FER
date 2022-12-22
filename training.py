@@ -11,65 +11,18 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix
 
 from ferModel import FER_Model
-from modelFlow import initFlow
+from modelFlow import getConsts, initData, initFlow
 
 # gpus = tf.config.list_physical_devices('GPU')
 # for gpu in gpus:
 #   tf.config.experimental.set_memory_growth(gpu, True)
 
 
-df = pd.read_csv('./dataset/fer2013.csv')
+BATCH_SIZE = 64
+CLASSES=np.array(("Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"))
 
-numClasses = 7
-width, height = 48, 48
-emotionLabels = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"]
-classes=np.array(("Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"))
-
-k = np.array(list(map(int,df.iloc[0,1].split(" "))),dtype='uint8').reshape((48,48))
-
-X_train = []
-y_train = []
-X_test = []
-y_test = []
-for index, row in df.iterrows():
-    k = row['pixels'].split(" ")
-    if row['Usage'] == 'Training':
-        X_train.append(np.array(k))
-        y_train.append(row['emotion'])
-    elif row['Usage'] == 'PublicTest':
-        X_test.append(np.array(k))
-        y_test.append(row['emotion'])
-
-X_train = np.array(X_train, dtype = 'uint8')
-y_train = np.array(y_train, dtype = 'uint8')
-X_test = np.array(X_test, dtype = 'uint8')
-y_test = np.array(y_test, dtype = 'uint8')
-
-X_train = X_train.reshape(X_train.shape[0], 48, 48, 1)
-X_test = X_test.reshape(X_test.shape[0], 48, 48, 1)
-y_train= to_categorical(y_train, num_classes=7)
-y_test = to_categorical(y_test, num_classes=7)
-
-
-datagen = ImageDataGenerator( 
-    rescale=1./255,
-    rotation_range = 10,
-    horizontal_flip = True,
-    width_shift_range=0.1,
-    height_shift_range=0.1,
-    fill_mode = 'nearest')
-
-testgen = ImageDataGenerator( 
-    rescale=1./255
-    )
-datagen.fit(X_train)
-
-batch_size = 64
-
-train_flow = datagen.flow(X_train, y_train, batch_size=batch_size) 
-test_flow = testgen.flow(X_test, y_test, batch_size=batch_size)
-
-
+(X_train, y_train), (X_test, y_test) = initData()
+(train_flow, test_flow) = initFlow(X_train, y_train, X_test, y_test)
 
 model = FER_Model()
 opt = Adam(learning_rate=0.0001, decay=1e-6)
@@ -82,11 +35,11 @@ callbacks_list = [checkpoint]
 num_epochs = 100  
 
 history = model.fit(train_flow, 
-                    steps_per_epoch=len(X_train) / batch_size, 
+                    steps_per_epoch=len(X_train) / BATCH_SIZE, 
                     epochs=num_epochs,  
                     callbacks=callbacks_list,
                     validation_data=test_flow,  
-                    validation_steps=len(X_test) / batch_size)
+                    validation_steps=len(X_test) / BATCH_SIZE)
 
 train_loss=history.history['loss']
 val_loss=history.history['val_loss']
@@ -116,7 +69,7 @@ loss = model.evaluate(X_test/255., y_test)
 print("Test Loss " + str(loss[0]))
 print("Test Acc: " + str(loss[1]))
 
-def plot_confusion_matrix(y_test, y_pred, classes,
+def plot_confusion_matrix(y_test, y_pred, CLASSES,
                           normalize=False,
                           title='Unnormalized confusion matrix',
                           cmap=plt.cm.Blues):
@@ -130,9 +83,9 @@ def plot_confusion_matrix(y_test, y_pred, classes,
   plt.imshow(cm, interpolation='nearest', cmap=cmap)
   plt.title(title)
   plt.colorbar()
-  tick_marks = np.arange(len(classes))
-  plt.xticks(tick_marks, classes, rotation=45)
-  plt.yticks(tick_marks, classes)
+  tick_marks = np.arange(len(CLASSES))
+  plt.xticks(tick_marks, CLASSES, rotation=45)
+  plt.yticks(tick_marks, CLASSES)
 
   thresh = cm.min() + (cm.max() - cm.min()) / 2.
   for i in range (cm.shape[0]):
@@ -148,7 +101,7 @@ y_pred_ = model.predict(X_test/255., verbose=1)
 y_pred = np.argmax(y_pred_, axis=1)
 t_te = np.argmax(y_test, axis=1)
 fig = plot_confusion_matrix(y_test=t_te, y_pred=y_pred,
-                      classes=classes,
+                      classes=CLASSES,
                       normalize=True,
                       cmap=plt.cm.Greys,   title='Average accuracy: ' + str(np.sum(y_pred == t_te)/len(t_te)) + '\n')
 
