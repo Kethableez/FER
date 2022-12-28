@@ -3,3 +3,5 @@ main-old.py
 *.hdf5
 __pycache__
 fer-env
+test
+dataset-v2

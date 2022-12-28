@@ -6,8 +6,13 @@ from keras.models import load_model, model_from_json
 from keras.preprocessing import image
 from keras.utils import img_to_array, load_img
 
-model = model_from_json(open('./models/model.json', 'r').read())
-model.load_weights('./models/model.h5')
+VERSION = 1
+
+def loadModel():
+  model = model_from_json(open('./models/model-v{}.json'.format(VERSION), 'r').read())
+  model.load_weights('./models/model-v{}.h5'.format(VERSION))
+  return model
+
 
 face_haar_cascade = cv2.CascadeClassifier('./models/haar.xml')
 cap=cv2.VideoCapture(0)
@@ -28,6 +33,8 @@ COLORS = [
   (0,0,0),
   (255,255,255)
 ]
+
+ferModel = loadModel()
 
 while cap.isOpened():
   res,frame=cap.read()
